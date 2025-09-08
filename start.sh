@@ -15,5 +15,14 @@ if [ $# -eq 0 ]; then
     set -- up --build
 fi
 
+# Prüfen, ob das Image existiert
+if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
+    echo "Docker-Image $IMAGE_NAME nicht gefunden → build.sh aufrufen..."
+    chmod +x start.sh
+    ./build.sh
+else
+    echo "Docker-Image $IMAGE_NAME gefunden → build.sh wird nicht aufgerufen."
+fi
+
 # Execute Docker Compose command
 $COMPOSE -f docker-compose.yml "$@"
