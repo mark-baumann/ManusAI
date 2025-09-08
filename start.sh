@@ -1,28 +1,44 @@
 #!/bin/bash
+# Railpack-kompatibles Startskript mit Docker-Prüfung
 
-# Determine which Docker Compose command to use
-if command -v docker &> /dev/null && docker compose version &> /dev/null; then
-    COMPOSE="docker compose"
-elif command -v docker-compose &> /dev/null; then
-    COMPOSE="docker-compose"
-else
-    echo "Error: Neither docker compose nor docker-compose command found" >&2
+# Name des Docker-Images anpassen
+IMAGE_NAME="mein-projekt_image"
+
+# Prüfen, ob Docker verfügbar ist
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker ist nicht installiert oder nicht im PATH!" >&2
     exit 1
 fi
 
-# Wenn keine Argumente übergeben wurden → Standardbefehl setzen
-if [ $# -eq 0 ]; then
-    set -- up --build
+# Prüfen, ob Docker Compose verfügbar ist
+if command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    COMPOSE="docker compose"
+    echo "Docker Compose gefunden (docker compose)"
+elif command -v docker-compose &> /dev/null; then
+    COMPOSE="docker-compose"
+    echo "Docker Compose gefunden (docker-compose)"
+else
+    echo "Error: Weder 'docker compose' noch 'docker-compose' gefunden!" >&2
+    exit 1
 fi
 
-# Prüfen, ob das Image existiert
+# Prüfen, ob das Docker-Image existiert
 if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
     echo "Docker-Image $IMAGE_NAME nicht gefunden → build.sh aufrufen..."
-    chmod +x start.sh
-    ./build.sh
+    if [ -x ./build.sh ]; then
+        ./build.sh
+    else
+        echo "Error: build.sh existiert nicht oder ist nicht ausführbar!" >&2
+        exit 1
+    fi
 else
     echo "Docker-Image $IMAGE_NAME gefunden → build.sh wird nicht aufgerufen."
 fi
 
-# Execute Docker Compose command
+# Container starten (Standard: up, wenn keine Argumente übergeben)
+if [ $# -eq 0 ]; then
+    set -- up
+fi
+
+# Docker Compose ausführen
 $COMPOSE -f docker-compose.yml "$@"
