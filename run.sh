@@ -10,6 +10,10 @@ else
     exit 1
 fi
 
+# Wenn keine Argumente übergeben wurden → Standardbefehl setzen
+if [ $# -eq 0 ]; then
+    set -- up --build
+fi
 
 # Execute Docker Compose command
 $COMPOSE -f docker-compose.yml "$@"
